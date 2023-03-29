@@ -1,0 +1,27 @@
+{
+    "compilerOptions": {
+        "sourceMap": true,
+        "strict": true,
+        "outDir": "dist",
+        "module": "CommonJS",
+        "target": "ES2022",
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "noImplicitAny": true,
+        "noImplicitOverride": true,
+        "noImplicitReturns": false,
+        "noImplicitThis": true,
+        "skipLibCheck": true,
+        "types": [
+            "@types/express",
+            "@types/node"
+        ],
+        "lib": [
+            "es2021",
+            "dom"
+        ]
+    },
+    "files": [
+        "./src/typings/Custom.d.ts"
+    ]
+}

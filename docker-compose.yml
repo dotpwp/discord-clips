@@ -1,0 +1,33 @@
+version: '3.7'
+services:
+  # Postgres Database
+  postgres:
+    container_name: robobot_postgres
+    image: postgres:alpine3.17
+    ports:
+      - 127.0.0.1:12001:5432
+    environment:
+      - POSTGRES_DB=robobot
+      - POSTGRES_USER=robobot
+      - POSTGRES_PASSWORD=ROBOBOT1273
+    volumes:
+      - robobot_pgdb:/var/lib/postgresql
+    restart: always
+
+  # Redis Database
+  redis:
+    container_name: robobot_redis
+    image: redis/redis-stack-server:latest
+    ports:
+      - 127.0.0.1:12002:6379
+    environment:
+      - REDIS_ARGS=--requirepass ROBOBOT1273
+    volumes:
+      - robobot_rdb:/data
+    restart: always
+
+volumes:
+  robobot_pgdb:
+    driver: local
+  robobot_rdb:
+    driver: local

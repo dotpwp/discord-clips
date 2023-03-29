@@ -1,0 +1,105 @@
+datasource db {
+    provider = "postgresql"
+    url      = env("DB_POSTGRES_URL")
+}
+
+generator client {
+    output = "prisma-client"
+    provider = "prisma-client-js"
+}
+
+// MODELS
+model User {
+    userId   BigInt    @id @default(autoincrement())
+    created  DateTime  @default(now())
+    updated  DateTime  @default(now()) @updatedAt
+    // USER
+    role     Role      @default(USER)
+    username String
+    password String
+    // RELATIONSHIPS
+    sessions Session[]
+    videos   Video[]
+}
+
+model Video {
+    videoId      BigInt   @id @default(autoincrement())
+    userId       BigInt
+    created      DateTime @default(now())
+    updated      DateTime @default(now()) @updatedAt
+    // METADAT
+    shareId      String   @unique
+    title        String
+    description  String
+    viewCount    BigInt   @default(0)
+    privacy      Privacy  @default(UNLISTED)
+    // ENCODING
+    encodeStatus Status   @default(QUEUED)
+    encodeInfo   String?
+    encodeText   String?
+    formats      Format[]
+    // RELATIONSHIPS
+    User         User     @relation(fields: [userId], references: [userId])
+}
+
+model Format {
+    formatId     BigInt     @id @default(autoincrement())
+    videoId      BigInt
+    created      DateTime   @default(now())
+    // VIDEO 
+    hasVideo     Boolean    @default(false)
+    videoCodec   VideoCodec @default(NONE)
+    videoHeight  Int?
+    videoWidth   Int?
+    videoBitrate Int
+    // AUDIO
+    hasAudio     Boolean    @default(false)
+    audioCodec   AudioCodec @default(NONE)
+    audioBitrate Int
+    // RELATIONSHIPS
+    video        Video      @relation(fields: [videoId], references: [videoId])
+}
+
+model Session {
+    sessionId BigInt   @id @default(autoincrement())
+    userId    BigInt
+    created   DateTime @default(now())
+    // TOKEN
+    token     String   @unique
+    ipAddress String
+    userAgent String
+    // RELATIONSHIPS
+    User      User     @relation(fields: [userId], references: [userId])
+}
+
+// ENUMS
+enum Role {
+    ADMIN
+    MODERATOR
+    USER
+    DELETED
+}
+
+enum Status {
+    QUEUED
+    WORKING
+    ERRORED
+    PROCESSED
+}
+
+enum Privacy {
+    DELETED
+    PRIVATE
+    UNLISTED
+    PUBLIC
+}
+
+enum AudioCodec {
+    NONE
+    AAC
+}
+
+enum VideoCodec {
+    NONE
+    X264
+}
