@@ -28,6 +28,7 @@ class Crypto {
 
     // Decodes and Verifies Given JSON WEB TOKEN from the user, returns false if bad
     public decodeAndVerifyUserToken(someToken: string): TokenData | false {
+        if (!someToken) return false
 
         // Split up token into segments
         const [givenPayload, givenSignature] = someToken.split(".", 2);
