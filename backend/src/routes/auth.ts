@@ -171,26 +171,31 @@ Webserver.get(
             .cookie("auth_token", tokenString, {
                 ["maxAge"]: (accessToken.expires_in * 1000),
                 ["sameSite"]: "strict",
-                ["httpOnly"]: true,
+                ["httpOnly"]: false,
                 ["secure"]: true,
             })
-            .send(`
-            <!DOCTYPE html> 
-            <html lang="en">
-                <head>
-                    <title>Please wait...</title>
-                </head>
-                <body>
-                    <p style="font-family: Arial, Helvetica, sans-serif">
-                        Logged in as ${username}! 
-                        <a href="/">Sending you Home... 🚀</a>
-                    </p>
-                </body>
-                <script>
-                    setTimeout(()=>{window.location.href = "/"}, 5000) 
-                </script>
-            </html>
-       `)
+            .send(
+                `<!DOCTYPE html> 
+                <html lang="en">
+                    <head>
+                        <title>Please wait...</title>
+                    </head>
+                    <body>
+                        <p style="font-family: Arial, Helvetica, sans-serif">
+                            Logged in as ${username}! 
+                        </p>
+                    </body>
+                    <script>
+                        setTimeout(function() {
+                            if (window.parent) {
+                                window.close()
+                            } else {
+                                window.location.href = "/"
+                            }
+                        }, 1_000) 
+                    </script>
+                </html>`
+            )
     }
 )
 
