@@ -40,7 +40,7 @@ Webserver.get(
 
         const search = new URLSearchParams(req.originalUrl.slice(req.originalUrl.indexOf("?") + 1))
         const optionPage = getQuery(search, "page", 1, 1, Infinity)
-        const optionItemsPerPage = getQuery(search, "limit", 1, 50, 50)
+        const optionItemsPerPage = getQuery(search, "limit", 24, 24, 48)
         const filterCategoryID = Safely.parseBigInt(search.get("category"))
         const filterUserID = Safely.parseBigInt(search.get("user"))
 
