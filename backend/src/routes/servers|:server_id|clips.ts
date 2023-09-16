@@ -15,6 +15,7 @@ import Validate from "../middleware/Validate"
 import Fetch from "../middleware/Fetch"
 import { encoderOptions } from "../Encoder"
 import sharp = require("sharp")
+import { Prisma } from "@prisma/client"
 
 function getQuery(
     search: URLSearchParams,
@@ -61,51 +62,58 @@ Webserver.get(
 
 
         // [2] Fetch Clips for Category
-        const [someClips, fetchClipsError] = await Safely.call(
-            Database.clip.findMany({
-                skip: (optionPage - 1) * optionItemsPerPage,
-                take: optionItemsPerPage,
-                orderBy: {
-                    ["created"]: "asc"
-                },
-                where: {
-                    ["deleted"]: false,
-                    ["serverId"]: res.locals.server_id,
-                    ["categoryId"]: filterCategoryID || undefined,
-                    ["userId"]: filterUserID || undefined,
-                },
-                select: {
-                    ["id"]: true,
-                    ["created"]: true,
-                    ["title"]: true,
-                    ["description"]: true,
-                    ["duration"]: true,
-                    ["available"]: true,
-                    ["approximateViewCount"]: true,
-                    ["approximateHeartCount"]: true,
-                    ["user"]: {
-                        select: {
-                            ["id"]: true,
-                            ["avatar"]: true,
-                            ["username"]: true,
-                            ["uploadCount"]: true,
-                        }
+        const where: Prisma.ClipWhereInput = {
+            ["deleted"]: false,
+            ["serverId"]: res.locals.server_id,
+            ["categoryId"]: filterCategoryID || undefined,
+            ["userId"]: filterUserID || undefined
+        }
+        const [data, transactionError] = await Safely.call(
+            Database.$transaction([
+                Database.clip.findMany({
+                    where,
+                    skip: (optionPage - 1) * optionItemsPerPage,
+                    take: optionItemsPerPage,
+                    orderBy: {
+                        ["created"]: "asc"
                     },
-                    ["category"]: {
-                        select: {
-                            ["id"]: true,
-                            ["name"]: true,
-                            ["icon"]: true,
-                            ["modManaged"]: true
-                        }
-                    },
-                }
-            })
+                    select: {
+                        ["id"]: true,
+                        ["created"]: true,
+                        ["title"]: true,
+                        ["description"]: true,
+                        ["duration"]: true,
+                        ["available"]: true,
+                        ["approximateViewCount"]: true,
+                        ["approximateHeartCount"]: true,
+                        ["user"]: {
+                            select: {
+                                ["id"]: true,
+                                ["avatar"]: true,
+                                ["username"]: true,
+                                ["uploadCount"]: true,
+                            }
+                        },
+                        ["category"]: {
+                            select: {
+                                ["id"]: true,
+                                ["name"]: true,
+                                ["icon"]: true,
+                                ["modManaged"]: true,
+                            }
+                        },
+                    }
+                }),
+                Database.clip.count({ where: where })
+            ])
         )
-        if (fetchClipsError)
-            return Respond.withServerError(res, fetchClipsError)
+        if (transactionError)
+            return Respond.withServerError(res, transactionError)
 
-        Respond.withJSON(res, someClips)
+        Respond.withJSON(res, {
+            count: data[1],
+            items: data[0],
+        })
     }
 )
 
