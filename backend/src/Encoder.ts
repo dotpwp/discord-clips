@@ -53,10 +53,10 @@ class EncoderProcess {
                     })
                     .catch(() => {
                         // stuck in oblivion ig
-                     })
+                    })
             })
 
-            .finally(() => setTimeout(() => this.bootstrapWorker(), 7_500))
+            .finally(() => setTimeout(() => this.bootstrapWorker(), 5_000))
     }
 
     private async workerEventLoop() {
