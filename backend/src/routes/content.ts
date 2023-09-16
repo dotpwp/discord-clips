@@ -66,8 +66,8 @@ Webserver.get(
                 progressive: true
             })
             if (format === "webp") vips.webp({
-                quality: 25,
-                effort: 1,
+                quality: 75,
+                effort: 4,
             })
 
             // Send Image to Client
