@@ -214,7 +214,7 @@ Webserver.post(
 
                 case "video":
                     // Write File to Disk
-                    const filePath = join(folderPath, `.original.${field}.blob`)
+                    const filePath = join(folderPath, `original.${field}.blob`)
                     const writer = createWriteStream(filePath)
 
                     // Begin Writing
