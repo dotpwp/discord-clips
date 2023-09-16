@@ -25,8 +25,8 @@ import "./routes/content"
 import "./routes/servers|:server_id"
 import "./routes/servers|:server_id|categories"
 import "./routes/servers|:server_id|clips"
-import "./routes/servers|:server_id|clips|:clip_id|hearts"
-import "./routes/servers|:server_id|clips|:clip_id"
+import "./routes/clips|:clip_id|hearts"
+import "./routes/clips|:clip_id"
 import "./routes/users|:user_id"
 
 Webserver

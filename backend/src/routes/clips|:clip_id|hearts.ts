@@ -7,13 +7,13 @@ import Safely from "../modules/Safely";
 import Crypto from "../modules/Crypto";
 
 Webserver.use(
-    "/api/servers/:server_id/clips/:clip_id/hearts",
+    "/api/clips/:clip_id/hearts",
     (req, res, next) => {
         (req.method !== "PUT" && req.method !== "DELETE")
             ? Respond.withMethodNotAllowed(res)
             : next()
     },
-    Validate.parameters("server_id", "clip_id"),
+    Validate.parameters("clip_id"),
     Validate.userSession(true),
     async (req: ERequest, res: EResponse): Promise<void> => {
 
@@ -26,7 +26,6 @@ Webserver.use(
                 where: {
                     ["deleted"]: false,
                     ["id"]: res.locals.clip_id,
-                    ["serverId"]: res.locals.server_id,
                 },
                 select: {
                     ["id"]: true

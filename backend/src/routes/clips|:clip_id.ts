@@ -9,8 +9,8 @@ import sharp = require("sharp")
 
 
 Webserver.get(
-    "/api/servers/:server_id/clips/:clip_id",
-    Validate.parameters("server_id", "clip_id"),
+    "/api/clips/:clip_id",
+    Validate.parameters("clip_id"),
     async (req: ERequest, res: EResponse): Promise<void> => {
 
         // [1] Fetch Clip from Database
@@ -19,7 +19,6 @@ Webserver.get(
                 where: {
                     ["deleted"]: false,
                     ["id"]: res.locals.clip_id,
-                    ["serverId"]: res.locals.server_id
                 },
                 select: {
                     ["id"]: true,
@@ -30,6 +29,15 @@ Webserver.get(
                     ["approximateViewCount"]: true,
                     ["approximateHeartCount"]: true,
                     ["available"]: true,
+                    ["server"]: {
+                        select: {
+                            ["id"]: true,
+                            ["name"]: true,
+                            ["icon"]: true,
+                            ["uploadCount"]: true,
+                            ["categoryCount"]: true,
+                        }
+                    },
                     ["user"]: {
                         select: {
                             ["id"]: true,
@@ -93,7 +101,7 @@ interface RequestBody {
 }
 
 Webserver.use(
-    "/api/servers/:server_id/clips/:clip_id",
+    "/api/clips/:clip_id",
     (req, res, next) => {
         if (req.method === "PATCH")
             return Validate.responseBody({
@@ -120,7 +128,7 @@ Webserver.use(
             ? next()
             : Respond.withMethodNotAllowed(res)
     },
-    Validate.parameters("server_id", "clip_id"),
+    Validate.parameters("clip_id"),
     Validate.userSession(true),
     async (req: ERequest, res: EResponse): Promise<void> => {
 
@@ -135,7 +143,6 @@ Webserver.use(
                 where: {
                     ["deleted"]: false,
                     ["id"]: res.locals.clip_id,
-                    ["serverId"]: res.locals.server_id
                 },
                 select: {
                     ["id"]: true,
@@ -179,7 +186,6 @@ Webserver.use(
                 where: {
                     ["deleted"]: false,
                     ["id"]: res.locals.clip_id,
-                    ["serverId"]: res.locals.server_id
                 },
                 select: {
                     ["id"]: true
