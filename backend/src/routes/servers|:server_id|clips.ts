@@ -42,6 +42,7 @@ Webserver.get(
         const optionPage = getQuery(search, "page", 1, 1, Infinity)
         const optionItemsPerPage = getQuery(search, "limit", 24, 24, 48)
         const filterCategoryID = Safely.parseBigInt(search.get("category"))
+        const filterCursorId = Safely.parseBigInt(search.get("cursor"))
         const filterUserID = Safely.parseBigInt(search.get("user"))
 
         // [1] Fetch Server Information
@@ -68,11 +69,16 @@ Webserver.get(
             ["categoryId"]: filterCategoryID || undefined,
             ["userId"]: filterUserID || undefined
         }
+        let cursor: Prisma.ClipWhereUniqueInput | undefined
+        if (filterCursorId) cursor = { ["id"]: filterCursorId }
+
+        // const cursor:Prisma.ClipClipsIn
         const [data, transactionError] = await Safely.call(
             Database.$transaction([
                 Database.clip.findMany({
                     where,
-                    skip: (optionPage - 1) * optionItemsPerPage,
+                    cursor,
+                    skip: (optionPage - 1) * optionItemsPerPage + (filterCursorId ? 1 : 0),
                     take: optionItemsPerPage,
                     orderBy: {
                         ["created"]: "asc"
@@ -104,7 +110,7 @@ Webserver.get(
                         },
                     }
                 }),
-                Database.clip.count({ where: where })
+                Database.clip.count({ where, cursor })
             ])
         )
         if (transactionError)
