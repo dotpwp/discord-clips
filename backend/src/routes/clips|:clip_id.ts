@@ -74,6 +74,7 @@ Webserver.get(
                             ["created"]: true,
                             ["user"]: {
                                 select: {
+                                    ["id"]: true,
                                     ["avatar"]: true,
                                     ["username"]: true,
                                 }
