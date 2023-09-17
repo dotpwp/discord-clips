@@ -189,7 +189,9 @@ Webserver.use(
                     ["id"]: res.locals.clip_id,
                 },
                 select: {
-                    ["id"]: true
+                    ["id"]: true,
+                    ["title"]: true,
+                    ["description"]: true,
                 },
                 data: {
                     ["deleted"]: (req.method === "DELETE") ? true : undefined,
