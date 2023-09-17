@@ -9,7 +9,7 @@ import Crypto from "../modules/Crypto";
 Webserver.use(
     "/api/clips/:clip_id/hearts",
     (req, res, next) => {
-        (req.method !== "PUT" && req.method !== "DELETE")
+        (req.method !== "PUT" && req.method !== "DELETE" && req.method !== "GET")
             ? Respond.withMethodNotAllowed(res)
             : next()
     },
@@ -37,7 +37,6 @@ Webserver.use(
         if (someClip === null)
             return Respond.withNotFound(res, "Unknown Clip")
 
-
         // [2] Find Heart
         const [someHeart, findHeartError] = await Safely.call(
             Database.heart.findFirst({
@@ -52,7 +51,8 @@ Webserver.use(
         )
         if (findHeartError !== undefined)
             return Respond.withServerError(res, findHeartError)
-
+        if (req.method === "GET")
+            return Respond.withJSON(res, someHeart !== null)
 
         // [3] Modify Hearts
         const isCreating = (req.method === "PUT")
