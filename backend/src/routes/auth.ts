@@ -105,13 +105,13 @@ Webserver.get(
                                     {
                                         ["id"]: Crypto.generateSnowflake(),
                                         ["name"]: "Clips",
-                                        ["icon"]: "fa-clapperboard",
+                                        ["icon"]: "clapperboard",
                                         ["modManaged"]: false,
                                     },
                                     {
                                         ["id"]: Crypto.generateSnowflake(),
                                         ["name"]: "Videos",
-                                        ["icon"]: "fa-video",
+                                        ["icon"]: "video",
                                         ["modManaged"]: false,
                                     }
                                 ]
