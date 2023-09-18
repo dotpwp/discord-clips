@@ -4,7 +4,6 @@ import Respond from "../modules/Respond"
 import Safely from "../modules/Safely"
 
 export interface PermissionsCache {
-    cachedAt: number | -1;       // UNIX Timestamp
     [key: string]: number;  // Server ID as key, value as permissions
 }
 
@@ -17,7 +16,7 @@ class Fetch {
 
             // User has no permissions if a guest
             if (res.locals.token === false) {
-                res.locals.permissions = { ["cachedAt"]: -1 }
+                res.locals.permissions = {}
                 return next()
             }
 

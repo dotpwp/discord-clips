@@ -20,7 +20,6 @@ Webserver.get(
                     ["id"]: {
                         in: Object
                             .keys(res.locals.permissions as PermissionsCache)
-                            .filter(n => n !== "cachedAt")
                             .map(c => BigInt(c))
                     }
                 },

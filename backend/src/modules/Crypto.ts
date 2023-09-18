@@ -1,12 +1,14 @@
+import { PermissionsCache } from "../middleware/Fetch";
 import { createHmac } from "crypto";
 
 export interface TokenData {
-    uid: bigint;            // Discord User ID
-    username: string;       // Discord Username/Displayname
-    accessToken: string;    // Discord oAuth2 Access Token
-    avatar: string | null;  // Discord User Avatar
-    iat: number;            // Initialized At (UNIX Timestamp)
-    eat: number;            // Expires At (UNIX Timestamp)
+    uid: bigint;                    // Discord User ID
+    username: string;               // Discord Username/Displayname
+    accessToken: string;            // Discord oAuth2 Access Token
+    avatar: string | null;          // Discord User Avatar
+    iat: number;                    // Initialized At (UNIX Timestamp)
+    eat: number;                    // Expires At (UNIX Timestamp)
+    permissions: PermissionsCache;  // Permissions
 };
 
 class Crypto {

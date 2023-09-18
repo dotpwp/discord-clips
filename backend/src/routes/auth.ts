@@ -82,7 +82,7 @@ Webserver.get(
 
 
         // [5] Cache Servers and Permissions
-        const permissions: PermissionsCache = { ["cachedAt"]: Date.now() }
+        const permissions: PermissionsCache = {}
         const userServers: DiscordPartialGuild[] = apiResponse.data
 
         let [__, transactionError] = await Safely.call(
@@ -161,7 +161,8 @@ Webserver.get(
             ["accessToken"]: accessToken.access_token,
             ["avatar"]: discordUser.avatar,
             ["iat"]: tokenIat,
-            ["eat"]: (tokenIat + accessToken.expires_in)
+            ["eat"]: (tokenIat + accessToken.expires_in),
+            ["permissions"]: permissions
         }
         const tokenString = Crypto.createNewUserToken(tokenData)
 

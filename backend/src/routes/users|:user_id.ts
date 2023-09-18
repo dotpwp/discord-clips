@@ -37,7 +37,7 @@ Webserver.get(
 
         if (someUser === null)
             return Respond.withNotFound(res, "Unknown User")
-        
+
 
         // [2] Fetch Clips for Each Server
         const [somServers, fetchServerError] = await Safely.call(
@@ -46,7 +46,6 @@ Webserver.get(
                     ["id"]: {
                         in: Object
                             .keys(someUser.permissions as PermissionsCache)
-                            .filter(n => n !== "cachedAt")
                             .map(c => BigInt(c))
                     }
                 },
