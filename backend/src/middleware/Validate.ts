@@ -4,7 +4,7 @@ import * as cookieParser from "cookie-parser"
 import Respond from "../modules/Respond"
 import Safely from "../modules/Safely"
 import Crypto from "../modules/Crypto"
-import { json } from "express"
+import { NextFunction, json } from "express"
 const parseCookies = cookieParser()
 
 class Validate {
@@ -65,6 +65,18 @@ class Validate {
                 })
             ) next()
         }
+    }
+
+    public bodyIsNotEmpty(req: ERequest, res: EResponse, next: NextFunction) {
+        Array.isArray(req.body)
+            ? (req.body.length === 0)
+                ? Respond.withBadRequest(res, "Array cannot be empty")
+                : next()
+            : (typeof (req.body) === "object")
+                ? (Object.keys(req.body).length === 0)
+                    ? Respond.withBadRequest(res, "Object cannot be empty")
+                    : next()
+                : Respond.withBadRequest(res, "Endpoint requires Body")
     }
 
     // Validate Request Body JSON
