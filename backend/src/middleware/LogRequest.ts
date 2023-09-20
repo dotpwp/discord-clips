@@ -46,6 +46,7 @@ function keyValuePair(someObject: object): string {
 */
 const LOG_JSON = createWriteStream(join(process.cwd(), "http.json.log"), { flags: "a" })
 const LOG_TEXT = createWriteStream(join(process.cwd(), "http.text.log"), { flags: "a" })
+const pad = (time: number, maxLength = 2) => time.toString().padStart(maxLength, "0")
 
 export default function (req: Request, res: Response, next: NextFunction) {
     // Retrieve Starting Info
@@ -56,12 +57,14 @@ export default function (req: Request, res: Response, next: NextFunction) {
 
     // Wait for Request to complete...
     res.once("close", () => {
-        const responseTime = (Date.now() - startTime)
+        const T = new Date()
+        const responseTime = (T.getTime() - startTime)
         const requestURL = parse(req.url)
 
         // Log Output to File & Console
-        // GET 200 999ms ~ /users/1234567890123456789 ~ 192.168.255.255 ~ Receive=>(256b) Upload=>(256b)
-        const OUTPUT = `${req.method} ${res.statusCode} ${responseTime.toLocaleString()}ms ~ ${req.originalUrl} ~ ${res.locals.ip} ~ (⬇️ ${bytes.format(bytesRead)}) (⬆️ ${bytes.format(bytesSent)})\n`
+        // 12:30:00.000 GET 200 999ms ~ /users/1234567890123456789 ~ 192.168.255.255 ~ Receive=>(256b) Upload=>(256b)
+        const TIMERS = `${pad(T.getHours())}:${pad(T.getMinutes())}:${pad(T.getSeconds())}.${pad(T.getMilliseconds(), 3)}`
+        const OUTPUT = `${TIMERS} ${req.method} ${res.statusCode} ${res.locals.ip} (⬇ ${bytes.format(bytesRead)} ⬆ ${bytes.format(bytesSent)} ⏱ ${responseTime.toLocaleString()}ms) ${req.originalUrl}\n`
         process.stdout.write(OUTPUT)
         LOG_TEXT.write(OUTPUT)
 
