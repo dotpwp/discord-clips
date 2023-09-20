@@ -30,8 +30,7 @@ class Fetch {
             if (fetchError !== undefined)
                 return Respond.withServerError(res, fetchError)
             if (someUser === null)
-                return Respond.withNotFound(res, "Unknown User")
-
+                return Respond.withUnauthorized(res)
 
             // Return permissions
             res.locals.permissions = someUser.permissions as PermissionsCache
