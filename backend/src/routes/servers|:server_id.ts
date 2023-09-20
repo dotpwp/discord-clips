@@ -31,9 +31,11 @@ Webserver.get(
                     ["categories"]: {
                         select: {
                             ["id"]: true,
+                            ["created"]: true,
                             ["name"]: true,
                             ["icon"]: true,
-                            ["modManaged"]: true,
+                            ["flags"]: true,
+                            ["managed"]: true,
                         }
                     },
                     ["webhooks"]: Validate.canModifyServer(res)

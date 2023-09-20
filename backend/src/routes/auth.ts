@@ -98,21 +98,30 @@ Webserver.get(
                         ["id"]: BigInt(server.id),
                         ["name"]: server.name,
                         ["icon"]: server.icon || null,
-                        ["categoryCount"]: 2,
+                        ["categoryCount"]: 3,
                         ["categories"]: {
                             createMany: {
                                 data: [
                                     {
                                         ["id"]: Crypto.generateSnowflake(),
+                                        ["name"]: "All",
+                                        ["icon"]: "folder",
+                                        ["managed"]: false,
+                                        ["flags"]: "ALL",
+                                    },
+                                    {
+                                        ["id"]: Crypto.generateSnowflake(),
                                         ["name"]: "Clips",
                                         ["icon"]: "clapperboard",
-                                        ["modManaged"]: false,
+                                        ["managed"]: false,
+                                        ["flags"]: "CLIPS",
                                     },
                                     {
                                         ["id"]: Crypto.generateSnowflake(),
                                         ["name"]: "Videos",
                                         ["icon"]: "video",
-                                        ["modManaged"]: false,
+                                        ["managed"]: false,
+                                        ["flags"]: "VIDEOS",
                                     }
                                 ]
                             }

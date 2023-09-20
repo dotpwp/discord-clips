@@ -14,6 +14,13 @@ enum EnumEncoderStatus {
     COMPLETE // Format Available
 }
 
+enum EnumCategoryFlag {
+    NONE
+    ALL
+    CLIPS
+    VIDEOS
+}
+
 enum EnumVideoCodec {
     H264
     VP9
@@ -31,7 +38,7 @@ model User {
     updated     DateTime @default(now()) @updatedAt
     avatar      String?
     username    String
-    permissions Json     @default("{\"cachedAt\":-1}")
+    permissions Json     @default("{}")
     uploads     Clip[]
     uploadCount Int      @default(0)
     hearts      Heart[]
@@ -48,16 +55,17 @@ model Server {
     uploads       Clip[]
     categoryCount Int        @default(0)
     categories    Category[]
-    webhooks      Json
+    webhooks      Json       @default("[]")
 }
 
 model Category {
-    id         BigInt   @unique @default(autoincrement())
-    created    DateTime @default(now())
-    serverId   BigInt
-    name       String
-    icon       String
-    modManaged Boolean  @default(false)
+    id       BigInt           @unique @default(autoincrement())
+    created  DateTime         @default(now())
+    serverId BigInt
+    name     String
+    icon     String
+    managed  Boolean          @default(false)
+    flags    EnumCategoryFlag @default(NONE)
 
     server Server @relation(fields: [serverId], references: [id])
     clips  Clip[]

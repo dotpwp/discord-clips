@@ -105,7 +105,7 @@ Webserver.get(
                                 ["id"]: true,
                                 ["name"]: true,
                                 ["icon"]: true,
-                                ["modManaged"]: true,
+                                ["managed"]: true,
                             }
                         },
                     }
@@ -241,9 +241,6 @@ Webserver.post(
             if (!body.video)
                 return closeBusboy("Missing field 'video'")
 
-            if (!body.category)
-                return closeBusboy("Missing field 'category'")
-
             if (body.title && body.title.length > 320)
                 return closeBusboy("Field 'title' cannot be longer than '320' characters")
 
@@ -255,7 +252,15 @@ Webserver.post(
             const [someServer, fetchServerError] = await Safely.call(
                 Database.server.findFirst({
                     where: { ["id"]: res.locals.server_id },
-                    select: { ["allowGuests"]: true }
+                    select: {
+                        ["allowGuests"]: true,
+                        ["categories"]: {
+                            select: {
+                                ["id"]: true,
+                                ["name"]: true
+                            }
+                        }
+                    }
                 })
             )
             if (fetchServerError !== undefined)
@@ -266,7 +271,6 @@ Webserver.post(
 
             if (!someServer.allowGuests && !res.locals.permissions[res.locals.server_id.toString()])
                 return Respond.withUnauthorized(res)
-
 
             // [3] Probe Media file for content
             Ffmpeg()
@@ -317,23 +321,30 @@ Webserver.post(
 
 
                     // [5] Ensure Category Exists
-                    const [someCategory, findError] = await Safely.call(
-                        Database.category.findFirst({
-                            where: {
-                                ["id"]: body.category,
-                                ["serverId"]: res.locals.server_id,
-                            },
-                            select: {
-                                ["id"]: true
-                            }
-                        })
-                    )
-                    if (findError !== undefined)
-                        return closeBusboy("", findError)
+                    let activeCategory
+                    if (body.category) {
+                        const [someCategory, findError] = await Safely.call(
+                            Database.category.findFirst({
+                                where: {
+                                    ["id"]: body.category,
+                                    ["serverId"]: res.locals.server_id,
+                                },
+                                select: {
+                                    ["id"]: true
+                                }
+                            })
+                        )
+                        if (findError !== undefined)
+                            return closeBusboy("", findError)
 
-                    if (someCategory === null)
-                        return closeBusboy("Unknown Category")
+                        if (someCategory === null)
+                            return closeBusboy("Unknown Category")
 
+                    } else {
+                        activeCategory = someServer.categories.find(c => c.name === "All")
+                        if (!activeCategory)
+                            return closeBusboy("Cannot find default category")
+                    }
 
                     // [6] Add Clip to Encoder Queue
                     const videoStreamInfo = info.streams.find(s => s.codec_type === "video")
@@ -345,7 +356,7 @@ Webserver.post(
                                 ["id"]: videoId,
                                 ["userId"]: res.locals.token.uid,
                                 ["serverId"]: res.locals.server_id,
-                                ["categoryId"]: body.category,
+                                ["categoryId"]: activeCategory.id,
                                 ["title"]: body.title || videoId.toString(),
                                 ["description"]: body.description || `A clip uploaded by ${res.locals.token.username}`,
                                 ["duration"]: info.format.duration | 0,

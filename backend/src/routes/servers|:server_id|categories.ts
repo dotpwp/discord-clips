@@ -12,32 +12,31 @@ import Fetch from "../middleware/Fetch"
 interface RequestBody {
     name: string
     icon: string
-    modManaged: boolean
-}
-const ValidationOptions: BodyValidationOptions = {
-    ["name"]: {
-        type: "string",
-        required: true,
-        maximumLength: 32,
-        minimumLength: 1,
-    },
-    ["icon"]: {
-        type: "string",
-        required: true,
-        maximumLength: 32,
-        minimumLength: 1
-    },
-    ["modManaged"]: {
-        type: "boolean",
-        required: true,
-    }
+    managed: boolean
 }
 
 Webserver.post(
     "/api/servers/:server_id/categories",
     Validate.parameters("server_id"),
+    Validate.responseBody({
+        ["name"]: {
+            type: "string",
+            required: true,
+            maximumLength: 32,
+            minimumLength: 1,
+        },
+        ["icon"]: {
+            type: "string",
+            required: true,
+            maximumLength: 32,
+            minimumLength: 1
+        },
+        ["managed"]: {
+            type: "boolean",
+            required: true,
+        }
+    }),
     Validate.userSession(true),
-    Validate.responseBody(ValidationOptions),
     Fetch.userPermissions(true),
     Validate.userCanModifyServer,
     async (req: ERequest, res: EResponse): Promise<void> => {
@@ -51,13 +50,16 @@ Webserver.post(
                     ["serverId"]: res.locals.server_id,
                     ["name"]: body.name,
                     ["icon"]: body.icon,
-                    ["modManaged"]: body.modManaged,
+                    ["managed"]: body.managed,
+                    ["flags"]: "NONE"
                 },
                 select: {
                     ["id"]: true,
+                    ["created"]: true,
                     ["name"]: true,
                     ["icon"]: true,
-                    ["modManaged"]: true
+                    ["managed"]: true,
+                    ["flags"]: true
                 }
             })
         )
@@ -68,54 +70,56 @@ Webserver.post(
     }
 )
 
-Webserver.use(
+Webserver.patch(
     "/api/servers/:server_id/categories/:category_id",
-    (req, res, next) => {
-        if (req.method === "PATCH")
-            return Validate.responseBody(ValidationOptions)(req, res, () => next())
-
-        req.method === "DELETE"
-            ? next()
-            : Respond.withMethodNotAllowed(res)
-    },
     Validate.parameters("server_id", "category_id"),
+    Validate.responseBody({
+        ["name"]: {
+            type: "string",
+            required: false,
+            maximumLength: 32,
+            minimumLength: 1,
+        },
+        ["icon"]: {
+            type: "string",
+            required: false,
+            maximumLength: 32,
+            minimumLength: 1
+        },
+        ["managed"]: {
+            type: "boolean",
+            required: false,
+        }
+    }),
+    Validate.bodyIsNotEmpty,
     Validate.userSession(true),
     Fetch.userPermissions(true),
     Validate.userCanModifyServer,
     async (req: ERequest, res: EResponse): Promise<void> => {
-        
+
         // [1] Modify Category in Database
         const body: RequestBody = req.body
         const [updatedCategory, updateError] = await Safely.call(
-            (req.method === "PATCH")
-                // PATCH: Update Category
-                ? Database.category.update({
-                    where: {
-                        ["serverId"]: res.locals.server_id,
-                        ["id"]: res.locals.category_id
-                    },
-                    data: {
-                        ["name"]: body.name,
-                        ["icon"]: body.icon,
-                        ["modManaged"]: body.modManaged,
-                    },
-                    select: {
-                        ["id"]: true,
-                        ["name"]: true,
-                        ["icon"]: true,
-                        ["modManaged"]: true
-                    }
-                })
-                // DELETE: Remove Category
-                : Database.category.delete({
-                    where: {
-                        ["serverId"]: res.locals.server_id,
-                        ["id"]: res.locals.category_id,
-                    },
-                    select: {
-                        ["id"]: true,
-                    }
-                })
+            Database.category.update({
+                where: {
+                    ["id"]: res.locals.category_id,
+                    ["serverId"]: res.locals.server_id,
+                    ["flags"]: "NONE"
+                },
+                data: {
+                    ["name"]: body?.name,
+                    ["icon"]: body?.icon,
+                    ["managed"]: body?.managed,
+                },
+                select: {
+                    ["id"]: true,
+                    ["created"]: true,
+                    ["name"]: true,
+                    ["icon"]: true,
+                    ["managed"]: true,
+                    ["flags"]: true,
+                }
+            })
         )
         if (updateError?.code === "P2025")
             return Respond.withNotFound(res, "Unknown Category")
@@ -123,5 +127,69 @@ Webserver.use(
             return Respond.withServerError(res, updateError)
 
         Respond.withJSON(res, updatedCategory)
+    }
+)
+
+Webserver.delete(
+    "/api/servers/:server_id/categories/:category_id",
+    Validate.parameters("server_id", "category_id"),
+    Validate.userSession(true),
+    Fetch.userPermissions(true),
+    Validate.userCanModifyServer,
+    async (req: ERequest, res: EResponse): Promise<void> => {
+
+        const [someMessage, someError] = await Safely.call(
+            Database.$transaction(async tx => {
+
+                // Fetch Category for Server
+                const categories = await tx.category.findMany({
+                    where: {
+                        ["serverId"]: res.locals.server_id,
+                    },
+                    select: {
+                        ["id"]: true,
+                        ["flags"]: true,
+                    }
+                })
+
+                // Move all clips in the deleted category into the All Category
+                const oldCategory = categories.find(c => c.id === res.locals.category_id)
+                if (!oldCategory) return "Unknown Category"
+                if (oldCategory.flags === "ALL") return "Cannot delete all category"
+
+                const newCategory = categories.find(c => c.flags === "ALL")
+                if (!newCategory) return "Category 'All' does not exist!"
+
+                await tx.clip.updateMany({
+                    where: {
+                        ["serverId"]: res.locals.server_id,
+                        ["categoryId"]: res.locals.category_id,
+                    },
+                    data: {
+                        ["categoryId"]: newCategory.id
+                    }
+                })
+
+                // Delete Old Category
+                await tx.category.delete({
+                    where: {
+                        ["id"]: res.locals.category_id,
+                        ["serverId"]: res.locals.server_id
+                    },
+                    select: {
+                        ["id"]: true
+                    }
+                })
+
+                return true
+            })
+        )
+        if (someError !== undefined)
+            return Respond.withServerError(res, someError)
+
+        if (someMessage !== true)
+            return Respond.withBadRequest(res, someMessage)
+
+        Respond.withJSON(res, true)
     }
 )
