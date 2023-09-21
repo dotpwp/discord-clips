@@ -187,7 +187,11 @@ class Validate {
                 case "object":
                     const someObject: { [key: string]: any } = value
 
-                    if (typeof (someObject) !== "object") {
+                    if (
+                        someObject === null ||
+                        someObject === undefined ||
+                        typeof (someObject) !== "object"
+                    ) {
                         message = `Field '${field}' is not a '${options.type}'`
                         break
                     }
@@ -246,6 +250,7 @@ class Validate {
         // Return Request Handler
         return function (req: ERequest, res: EResponse, next: Next): void {
             json()(req, res, () => {
+
                 // Ensure required field(s) are present
                 for (const field of requiredFields) {
                     if (req.body[field] === undefined) {
