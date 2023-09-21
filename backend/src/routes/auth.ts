@@ -14,14 +14,57 @@ const
     DISCORD_OAUTH_CLIENT_ID = process.env.DISCORD_OAUTH_CLIENT_ID,
     DISCORD_OAUTH_SECRET = process.env.DISCORD_OAUTH_SECRET
 
+// Removes HTML Tags from message
+const HTML_PAGE = (message: string) =>
+    `<!DOCTYPE html> 
+    <html lang="en">
+        <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <style>
+                body {
+                    background-color: #1f2937;
+                }
+                div {
+                    position: absolute;
+                    display: flex;
+                    width: 100%;
+                    height: 100%;
+                    align-items: center;
+                    justify-content: center;
+                }
+                p {
+                    color: #e5e7eb;
+                    font-family: Arial, Helvetica, sans-serif
+                }
+                </style>
+                <script>
+                    setTimeout(function() {
+                        if (window.parent) {
+                            window.close()
+                        } else {
+                            window.location.href = "/"
+                        }
+                    }, 1_000) 
+                </script>
+        </head>
+        <body>
+            <div><p>${message.replace(/(<([^>]+)>)/ig, '')}</p></div>
+        </body>
+    </html>`
+
+
 Webserver.get(
     "/api/auth/login",
     async (req, res): Promise<void> => {
 
         // [1] Redirect user to Discord Sign in page
-        const code = Array.isArray(req.query.code)
-            ? req.query.code[0] as string
-            : req.query.code as string
+        const search = new URLSearchParams(req.originalUrl.slice(req.originalUrl.indexOf("?") + 1))
+        if (search.get("error")) {
+            // Return Error Page if cancelled authorization
+            res.send(HTML_PAGE(search.get("error_description") || "Unknown Error"))
+            return
+        }
+        const code = search.get("code")
         if (!code) return res.redirect(DISCORD_OAUTH_AUTH_URL)
 
         // [2] Get Auth Token from Discord
@@ -184,28 +227,7 @@ Webserver.get(
                 ["httpOnly"]: false,
                 ["secure"]: true,
             })
-            .send(
-                `<!DOCTYPE html> 
-                <html lang="en">
-                    <head>
-                        <title>Please wait...</title>
-                    </head>
-                    <body>
-                        <p style="font-family: Arial, Helvetica, sans-serif">
-                            Logged in as ${username}! 
-                        </p>
-                    </body>
-                    <script>
-                        setTimeout(function() {
-                            if (window.parent) {
-                                window.close()
-                            } else {
-                                window.location.href = "/"
-                            }
-                        }, 1_000) 
-                    </script>
-                </html>`
-            )
+            .send(HTML_PAGE(`Logged in as ${username}!`))
     }
 )
 
