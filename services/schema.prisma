@@ -1,0 +1,165 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DB_POSTGRES_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum EnumNotificationType {
+  CLIP_PROCESSED
+  CLIP_HEARTED
+}
+
+enum EnumVideoAvailability {
+  UNAVAILABLE
+  PROCESSING
+  READY
+}
+
+enum EnumContainerType {
+  MP4
+  WEBM
+  WEBP
+}
+
+enum EnumVideoCodec {
+  H264
+  VP9
+  AV1
+}
+
+enum EnumAudioCodec {
+  NONE
+  AAC
+  OPUS
+}
+
+model User {
+  id                  BigInt         @unique @default(autoincrement())
+  created             DateTime       @default(now())
+  updated             DateTime       @default(now()) @updatedAt
+  readNotificationsAt DateTime       @default(now())
+  lastNotificationAt  DateTime       @default(now())
+  avatar              String?
+  alias               String
+  uploadCount         Int            @default(0)
+  permissions         Json           @default("{}")
+  notifications       Notification[]
+  comments            Comment[]
+  uploads             Clip[]
+  hearts              Heart[]
+}
+
+model Server {
+  id            BigInt     @unique @default(autoincrement())
+  created       DateTime   @default(now())
+  updated       DateTime   @default(now()) @updatedAt
+  name          String
+  icon          String?
+  allowGuests   Boolean    @default(false)
+  categoryCount Int        @default(0)
+  uploadCount   Int        @default(0)
+  webhooks      Json       @default("[]")
+  categories    Category[]
+  uploads       Clip[]
+}
+
+model Category {
+  id       BigInt   @unique @default(autoincrement())
+  created  DateTime @default(now())
+  serverId BigInt
+  name     String
+  icon     String   @default("folder")
+  flags    Int
+  clips    Clip[]
+  server   Server   @relation(fields: [serverId], references: [id])
+}
+
+model Heart {
+  id            BigInt         @unique @default(autoincrement())
+  created       DateTime       @default(now())
+  userId        BigInt
+  clipId        BigInt
+  clip          Clip           @relation(fields: [clipId], references: [id])
+  user          User           @relation(fields: [userId], references: [id])
+  notifications Notification[]
+
+  @@unique([userId, clipId])
+}
+
+model Clip {
+  id                      BigInt                @unique @default(autoincrement())
+  created                 DateTime              @default(now())
+  updated                 DateTime              @default(now()) @updatedAt
+  userId                  BigInt
+  serverId                BigInt
+  categoryId              BigInt?
+  title                   String
+  description             String
+  thumbnail               String?
+  preview                 String?
+  duration                Int
+  approximateViewCount    Int                   @default(0)
+  approximateHeartCount   Int                   @default(0)
+  approximateCommentCount Int                   @default(0)
+  deleted                 Boolean               @default(false)
+  availability            EnumVideoAvailability @default(PROCESSING)
+  encoderOptions          Json                  @default("{}")
+  reason                  String?
+  hearts                  Heart[]
+  formats                 Format[]
+  comments                Comment[]
+  category                Category?             @relation(fields: [categoryId], references: [id])
+  server                  Server                @relation(fields: [serverId], references: [id])
+  user                    User                  @relation(fields: [userId], references: [id])
+  notifications           Notification[]
+}
+
+model Format {
+  id             BigInt            @unique @default(autoincrement())
+  created        DateTime          @default(now())
+  clipId         BigInt
+  encodingTime   Int
+  container      EnumContainerType
+  videoCodec     EnumVideoCodec
+  videoFramerate Int // 29.97
+  videoBitrate   Int // KB
+  videoWidth     Int // 1920
+  videoHeight    Int // 1080
+  audioCodec     EnumAudioCodec
+  audioBitrate   Int // KB
+  clip           Clip              @relation(fields: [clipId], references: [id])
+}
+
+model Notification {
+  id        BigInt               @unique @default(autoincrement())
+  timestamp DateTime             @default(now()) @updatedAt
+  userId    BigInt
+  type      EnumNotificationType
+  heartId   BigInt?
+  clipId    BigInt?
+  heart     Heart?               @relation(fields: [heartId], references: [id])
+  clip      Clip?                @relation(fields: [clipId], references: [id])
+  user      User                 @relation(fields: [userId], references: [id])
+
+  @@unique([type, userId, clipId])
+}
+
+// Not Yet Implemented
+model Comment {
+  id      BigInt    @unique @default(autoincrement())
+  created DateTime  @default(now())
+  updated DateTime  @default(now()) @updatedAt
+  replyId BigInt
+  clipId  BigInt
+  userId  BigInt
+  message String
+  edited  Boolean   @default(false)
+  deleted Boolean   @default(false)
+  replies Comment[] @relation("Replies")
+  reply   Comment?  @relation("Replies", fields: [replyId], references: [id])
+  clip    Clip      @relation(fields: [clipId], references: [id])
+  user    User      @relation(fields: [userId], references: [id])
+}

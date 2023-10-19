@@ -1,0 +1,71 @@
+version: "3"
+name: robobot-clips
+services:
+  # Application
+  backend_api:
+    container_name: clips-service-api
+    image: clips-services
+    ports:
+      - 3000:3000
+    volumes:
+      - type: volume
+        source: services-data
+        target: /data
+    env_file: ./services/.env
+    environment:
+      DATA_DIR: /data
+      WORKER_ID: 1
+      SERVICE: api
+      WEB_PROXY_MODE: nginx
+      WEB_HOSTNAME: 0.0.0.0
+      WEB_CORS_ORIGIN: https://clips.robobot.dev
+      WEB_SIGNATURE: change-me
+      DB_REDIS_URL: redis://host.docker.internal:6379/0
+      DB_POSTGRES_URL: postgres://robobot:password@host.docker.internal:5432?schema=clips
+      
+  backend_encoder:
+    container_name: clips-service-encoder
+    image: clips-services
+    volumes:
+      - type: volume
+        source: services-data
+        target: /data
+    env_file: ./services/.env
+    environment:
+      DATA_DIR: /data
+      WORKER_ID: 2
+      SERVICE: encoder
+      ENCODER_WORKER_COUNT: 1
+      DB_REDIS_URL: redis://host.docker.internal:6379/0
+      DB_POSTGRES_URL: postgres://robobot:password@host.docker.internal:5432?schema=clips
+
+  # Support
+  service_nginx:
+    container_name: clips-service-nginx
+    image: nginx:latest
+    ports:
+      - 80:80
+    volumes:
+      - ./nginx.dev.conf:/etc/nginx/nginx.conf:ro
+      - type: volume
+        source: services-data
+        target: /data
+        
+  # Database
+  db_redis:
+    container_name: clips-db-redis
+    image: redis:latest
+    ports:
+      - 6379:6379
+
+  db_postgres:
+    container_name: clips-db-postgres
+    image: postgres:latest
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: robobot
+
+volumes:
+  services-data:

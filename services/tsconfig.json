@@ -1,0 +1,25 @@
+{
+    "compilerOptions": {
+        "rootDir": "src",
+        "outDir": "dist/transpiled",
+        "target": "ES2022",
+        "module": "CommonJS",
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "strictNullChecks": true,
+        "strictBindCallApply": true,
+        // Breaks stuff, so its disabled for now...
+        // "strictFunctionTypes": true,
+        "strictPropertyInitialization": true,
+        "noImplicitAny": true,
+        "noImplicitOverride": true,
+        "noImplicitReturns": true,
+        "noImplicitThis": true,
+        "alwaysStrict": true,
+        "incremental": false,
+    },
+    "exclude": [
+        "tests/**/*.ts",
+        "**/*.test.ts"
+    ]
+}

@@ -1,8 +1,6 @@
-node_modules
-**/migrations
-**/media
-**/dist
-**.log
-**.env
+**/node_modules
+services/dist
+services/data
 **.DS_Store
-TODO.md
+**.env
+*.ignore*
