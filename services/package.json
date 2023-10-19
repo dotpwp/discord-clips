@@ -10,7 +10,7 @@
   "scripts": {
     "test": "echo \"TODO: WRITE TESTS!\" && exit 0",
     "build": "npx prisma generate && npm run test && npx tsc && npx webpack-cli --env production",
-    "db-push": "npx prisma generate dev",
+    "db-deploy": "npx prisma migrate deploy",
     "start-api": "npx nodemon ./src/index.ts api",
     "start-encoder": "npx nodemon ./src/index.ts encoder"
   },

@@ -2,7 +2,11 @@
 Backend for clips.robobot.dev. The `encoder` and `api` are packaged into one file.
 
 ## 🗂️ Prerequisites
-You can also use the `docker-compose.dev.yml` compose file to quickly setup the backend.
+Quickly setup the backend these docker commands:
+- `docker build -t clips-services -f .dockerfile .`
+- `docker compose -f ../docker-compose.dev.yml up -d`
+- `npm run db-deploy`
+  
 | Name                                                        | Description         |
 | :---------------------------------------------------------- | :------------------ |
 | [PostgreSQL (>=16.0)](https://hub.docker.com/_/postgres)    | Relational Database |
