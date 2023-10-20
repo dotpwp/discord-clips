@@ -1,6 +1,6 @@
 **/node_modules
-services/dist
-services/data
+**/dist
+**/data
 **.DS_Store
 **.env
 *.ignore*
