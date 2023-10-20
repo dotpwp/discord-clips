@@ -30,21 +30,21 @@ Webserver.post(
         ["name"]: {
             _description: "Name for Category",
             type: "string",
-            required: false,
+            required: true,
             maximumLength: 32,
             minimumLength: 2
         },
         ["icon"]: {
             _description: "Icon for Category",
             type: "string",
-            required: false,
+            required: true,
             maximumLength: 32,
             minimumLength: 1
         },
         ["flags"]: {
             _description: "Flags for Category",
             type: "number",
-            required: false,
+            required: true,
             maximumValue: FlagsCategories.ALL_FLAGS,
             minimumValue: 0,
         }
