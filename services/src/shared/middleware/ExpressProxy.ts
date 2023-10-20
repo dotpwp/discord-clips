@@ -8,7 +8,7 @@ import Froppy from "../util/Froppy";
  * @returns Middleware
  */
 export default function (): RequestHandler {
-    const MODE = process.env.WEB_PROXY_MODE?.toLowerCase()
+    const MODE = (process.env.WEB_PROXY_MODE || "none").toLowerCase()
     switch (MODE) {
 
         // Trust NGINX's "X-Forwarded-For" Header
@@ -28,12 +28,8 @@ export default function (): RequestHandler {
             }
 
         default:
-            // Notify user if they meant something else
-            if (MODE !== "none") Froppy.warn(
-                "PROXY", `Did you mean to set PROXY_MODE to "nginx", "cloudflare" or "none"?`
-            )
-
             // Trust Connecting IP Address
+            Froppy.info("PROXY", "Using Connecting IP as Original IP")
             return function (req: Request, res: Response, next: NextFunction) {
                 res.locals.ip = req.ip
                 next()
