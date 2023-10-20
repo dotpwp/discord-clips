@@ -112,6 +112,7 @@ Webserver.get(
                             ["name"]: server.name,
                             ["icon"]: server.icon,
                             ["webhooks"]: [],
+                            ["categoryCount"]: 2,
                             ["categories"]: {
                                 createMany: {
                                     data: [
