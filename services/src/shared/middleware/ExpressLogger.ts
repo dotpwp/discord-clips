@@ -7,7 +7,7 @@ import { NextFunction } from "express";
 import bytes from "bytes";
 
 const
-    proxyMode = (process.env.PROXY_MODE || "none"),
+    proxyMode = (process.env.WEB_PROXY_MODE || "none"),
     isDisabled = (proxyMode === "cloudflare" || proxyMode === "nginx"),
     fileOutput = (isDisabled ? null : Froppy.createLogStream("http")),
     StatusColors: Record<number, string> = {
