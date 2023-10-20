@@ -17,7 +17,7 @@ const [newEnv, envErrors] = Validator.createValidator({
     ["DATA_DIR"]: {
         _description: `Shared Directory to store files in. Set to "/data" for docker.`,
         type: "string",
-        required: true,
+        required: false,
     },
     ["NODE_ENV"]: {
         _description: "Change app behavior depending on environment.",
@@ -63,7 +63,7 @@ const [newEnv, envErrors] = Validator.createValidator({
     ["WEB_PROXY_MODE"]: {
         _description: "Set proxy server is running behind, turns off request logging if set.",
         type: "string",
-        required: (serviceName === "api"),
+        required: false,
         regex: [{
             message: `Value must of "nginx", "cloudflare", "none"`,
             pattern: new RegExp(/(nginx|cloudflare|none)/)

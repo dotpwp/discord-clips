@@ -30,6 +30,7 @@ class Path {
     constructor() {
         // Marked as recursive to prevent an error from
         // appearing due to already existing folders
+        mkdirSync(this.dataDirectory, { recursive: true })
         mkdirSync(this.privateLogsDirectory, { recursive: true })
         mkdirSync(this.privateBlobsDirectory, { recursive: true })
         mkdirSync(this.publicContentDirectory, { recursive: true })
