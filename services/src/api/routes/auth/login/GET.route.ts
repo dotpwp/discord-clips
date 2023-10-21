@@ -26,7 +26,10 @@ Webserver.get(
         // Render Error if user cancelled login
         const query = new URLSearchParams(req.url.slice(req.url.indexOf("?")))
         if (query.get("error")) return res.send(
-            HTML.notification(query.get("error_description") || "Unknown Error")
+            HTML.notification(
+                query.get("error_description") || "Unknown Error",
+                false
+            )
         )
 
         // Redirect User if they require a code

@@ -4,7 +4,7 @@ class HTML {
      * @param message - Message to Display, escapes HTML Characters.
      * @returns {string}
      */
-    public notification(message: string): string {
+    public notification(message: string, autoClose = true): string {
         return `<!DOCTYPE html> 
             <html lang="en">
                 <head>
@@ -27,6 +27,7 @@ class HTML {
                         }
                         </style>
                         <script>
+                        if (${autoClose}) {
                             setTimeout(function() {
                                 if (window.parent) {
                                     window.close()
@@ -34,6 +35,7 @@ class HTML {
                                     window.location.href = "/"
                                 }
                             }, 1_000) 
+                        }
                         </script>
                 </head>
                 <body>
