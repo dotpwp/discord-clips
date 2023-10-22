@@ -361,8 +361,8 @@ export default class Worker {
             // [6A] Calculate Resolution Tier
             const startAt = Date.now()
             const formatID = Unique.generateSnowflake()
-            const videoHeight = (videoStream.height || 0)
-            const videoWidth = (videoStream.width || 0)
+            const videoHeight = parseInt(videoStream.height || "0")
+            const videoWidth = parseInt(videoStream.width || "0")
             const videoFPS = (Safe.parseFramerate(videoStream.r_frame_rate) || 0)
 
             let resolution: VideoResolution = encoding.videoResolution[0]
