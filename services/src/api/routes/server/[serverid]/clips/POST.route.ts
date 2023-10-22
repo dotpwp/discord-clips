@@ -3,9 +3,12 @@ import { ERequest, EResponse } from "../../../../../types/Express";
 import { FlagsPermissions } from "../../../../../types/Permission";
 import { Cache, Database } from "../../../../../shared/util/Database";
 import { ErrorMessage } from "../../../../../types/Validator";
+import { ffmpegAsync } from "../../../../../shared/encoder/ffmpegAsync";
+import { ffmpegArgs } from "../../../../../shared/encoder/ffmpegArgs";
 import { Webserver } from "../../../..";
 import { ffprobe } from "../../../../../shared/encoder/ffprobeAsync";
 import { DBError } from "../../../../../types/Database";
+import generateThumbnails from "../../../../../shared/encoder/generateThumbnails";
 import Validator from "../../../../../shared/util/Validator";
 import Validate from "../../../../../shared/web/Validate";
 import Unique from "../../../../../shared/util/Unique";
@@ -15,10 +18,10 @@ import Safe from "../../../../../shared/util/Safe";
 import Path from "../../../../../shared/util/Path";
 import { createWriteStream, mkdir, rm } from "fs";
 import { NextFunction } from "express";
-import { join } from "path";
 import busboy from "busboy";
 import bytes from "bytes";
 import sharp from "sharp";
+
 
 // Needs Tests:
 // Title longer than 100 characters => 400 Bad Request
@@ -45,6 +48,7 @@ interface RequestBody {
 interface ExtraLocals {
     locals: {
         videoID: bigint;
+        imageID: string;
         cancelRequest: (message?: ErrorMessage, error?: Error) => void;
     }
 }
@@ -95,7 +99,6 @@ Webserver.post(
             })
             .on("field", (field, value) => {
                 switch (field) {
-                    // Store Fields with these names
                     case "title":
                     case "description":
                     case "category":
@@ -104,21 +107,31 @@ Webserver.post(
                     case "thumbnailAt":
                         req.body[field] = value
                         break
-                    // Disallow unknown Fields
-                    default: return cancelRequest(`${field}: Unknown field`)
+
+                    default:
+                        cancelRequest(`${field}: Unknown field`)
+                        break
                 }
             })
             .on("file", (field, value) => {
                 switch (field) {
-                    // Store Fields with these names
                     case "video":
-                    case "thumb":
-                        const filePath = join(contentPath, `${field}.original.blob`)
-                        value.pipe(createWriteStream(filePath))
-                        req.body[field] = filePath
+                        const videoPath = Path.forVideoBlob(videoID)
+                        value.pipe(createWriteStream(videoPath))
+                        req.body[field] = videoPath
                         break
-                    // Disallow unknown Fields
-                    default: return cancelRequest(`${field}: Unknown field`)
+
+                    case "thumbnail":
+                        const imageID = Unique.generateID()
+                        const imagePath = Path.forImageBlob(videoID, imageID)
+                        value.pipe(createWriteStream(imagePath))
+                        res.locals.imageID = imageID
+                        req.body[field] = imagePath
+                        break
+
+                    default:
+                        cancelRequest(`${field}: Unknown field`)
+                        break
                 }
             })
 
@@ -191,15 +204,7 @@ Webserver.post(
         const { cancelRequest, videoID, serverid, token } = res.locals
         const { body } = req
 
-        // [4A] Validate Image Data (if given)
-        if (body.thumbnail) {
-            const [_, testImageError] = await Safe.call(sharp(body.thumbnail).stats())
-            if (testImageError) return cancelRequest(
-                "thumb: Invalid or Malformed Image Data"
-            )
-        }
-
-        // [4B] Validate Video via Probing
+        // [4A] Validate Video via Probing
         const [videoStats, testVideoError] = await Safe.call(ffprobe(body.video))
         if (testVideoError)
             return cancelRequest("video: Invalid or Malformed Video Data")
@@ -208,8 +213,7 @@ Webserver.post(
         if (!videoStats.format.duration)
             return cancelRequest("video: Unknown Duration")
 
-
-        // [5] Validate Parameters (Mostly Trimming)
+        // [4B] Validate Parameters (Mostly Trimming)
         const trimStartPresent = (body.trimStart !== undefined)
         const trimEndPresent = (body.trimEnd !== undefined)
         const thumbAtPresent = (body.thumbnailAt !== undefined)
@@ -234,8 +238,55 @@ Webserver.post(
         if (trimEndPresent) duration = body.trimEnd
         if (trimStartPresent) duration = duration - body.trimStart
 
+        // [4C] Generate Thumbnails
+        if (body.thumbnail) {
+            // [4CA] Validate Given Thumbnail Data
+            const [_, testImageError] = await Safe.call(sharp(body.thumbnail).stats())
+            if (testImageError) return cancelRequest(
+                "thumbnail: Invalid or Malformed Image Data"
+            )
+        } else {
+            // [4CA] Create Thumbnail from Video
+            const imageID = Unique.generateID()
+            const imagePath = Path.forImageBlob(videoID, imageID)
+            res.locals.imageID = imageID
+            body.thumbnail = imagePath
 
-        // [6] Create Transaction
+            const [_, createThumbnailError] = await Safe.call(
+                new Promise<void>(async (resolve, reject) => {
+                    ffmpegAsync(
+                        new ffmpegArgs().add(
+                            "-an",
+                            // Start at halfway point or at user given point
+                            "-ss", `${body.thumbnailAt || (duration / 2) | 0}`,
+                            "-i", body.video,
+                            "-frames:v", "1",
+                            "-c:v", "png",
+                            "-f", "image2",
+                            imagePath
+                        ),
+                        err => err ? reject(err) : resolve()
+                    )
+                })
+            )
+            if (createThumbnailError) return cancelRequest(
+                "video: Unable to generate thumbnail"
+            )
+        }
+
+        // [4CB] Create Thumbnail Folder
+        const imageID = res.locals.imageID
+        const imageFolder = await Path.createThumbnailDirectory(videoID, imageID)
+        if (imageFolder instanceof Error)
+            return cancelRequest(undefined, imageFolder)
+
+        // [4CC] Generate Thumbnails
+        const [_, convertThumbnailError] = await Safe.call(generateThumbnails(imageFolder, body.thumbnail))
+        if (convertThumbnailError)
+            return cancelRequest(undefined, convertThumbnailError)
+
+
+        // [5] Create Transaction
         // This won't ensure that the category isn't from another server but whatever
         const [newClip, transactionError] = await Safe.call(
             Database.$transaction(async tx => {
@@ -244,12 +295,14 @@ Webserver.post(
                     where: { ["id"]: serverid },
                     data: { ["uploadCount"]: { increment: 1 } }
                 })
+
                 // [6B] Increment User Clip Counter
                 await tx.user.update({
                     select: { id: true },
                     where: { ["id"]: token.uid },
                     data: { ["uploadCount"]: { decrement: 1 } }
                 })
+
                 // [6C] Create new Clip in Database
                 return await tx.clip.create({
                     data: {
@@ -259,6 +312,7 @@ Webserver.post(
                         ["categoryId"]: body.category,
                         ["title"]: body.title,
                         ["description"]: body.description,
+                        ["thumbnail"]: imageID,
                         ["duration"]: duration,
                         ["encoderOptions"]: Safe.jsonStringify({
                             hasCustomThumbnail: (body.thumbnail !== undefined),
