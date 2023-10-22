@@ -81,7 +81,7 @@ Webserver.get(
         // [2] Fetch Clips for Category
         const [someClips, fetchClipsError] = await Safe.call(
             Database.clip.findMany({
-                ["cursor"]: filterCursor ? { id: filterCategory } : undefined,
+                ["cursor"]: filterCursor ? { id: filterCursor } : undefined,
                 ["skip"]: filterCursor ? 1 : 0,
                 ["take"]: limitItems,
                 orderBy: {
