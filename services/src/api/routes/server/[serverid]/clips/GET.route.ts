@@ -85,7 +85,7 @@ Webserver.get(
                 ["skip"]: filterCursor ? 1 : 0,
                 ["take"]: limitItems,
                 orderBy: {
-                    ["created"]: "asc"
+                    ["created"]: "desc"
                 },
                 where: {
                     ["deleted"]: false,
