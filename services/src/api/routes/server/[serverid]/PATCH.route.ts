@@ -114,7 +114,7 @@ Webserver.patch(
 
                     // [2A] Check Validation Cache
                     const WebhookURL = Discord.createWebhookURL(webhook.channel, webhook.token, false)
-                    const WebhookKey = Unique.generateHash(WebhookURL)
+                    const WebhookKey = Unique.hash(WebhookURL)
                     const [cacheResults, getError] = await Safe.call(Cache.hGet(keyWebhookCache, WebhookKey))
                     if (getError) {
                         if (!res.headersSent) Reply.withServerError(res, getError)

@@ -17,14 +17,6 @@ class Unique {
         return result
     }
     /**
-     * Return MD5 Hash of Content
-     * @param someData - Data to Hash
-     * @returns 
-     */
-    public generateHash(someData: BinaryLike): string {
-        return createHash("md5").update(someData).digest("hex")
-    }
-    /**
      * Generates a random string based on: 
      * - Date.now()
      * - 5 Random Bytes
@@ -35,6 +27,14 @@ class Unique {
         return Date.now().toString(16)          // Current Time
             + randomBytes(5).toString("hex")    // Random Bytes
             + (this.SEQUENCE++).toString(16)    // Sequence
+    }
+    /**
+     * Return MD5 Hash of Content
+     * @param someData - Data to Hash
+     * @returns 
+     */
+    public hash(someData: BinaryLike): string {
+        return createHash("md5").update(someData).digest("hex")
     }
 }
 export default new Unique()

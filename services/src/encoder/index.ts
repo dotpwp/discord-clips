@@ -27,7 +27,7 @@ export const encodingMethods: Encoding[] = [
 
 ScriptMoveCompleteToReencode.then(async scriptSha => {
     // Move Items from Complete Queue to Re-Encoding Queue
-    const encodingHash = Unique.generateHash(JSON.stringify(encodingMethods))
+    const encodingHash = Unique.hash(JSON.stringify(encodingMethods))
     const itemsMoved = await Cache.evalSha(scriptSha, { keys: [encodingHash] })
     Froppy.info("MASTER", `Moved ${itemsMoved} items to Re-Encode queue`)
 
