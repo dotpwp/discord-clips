@@ -300,7 +300,7 @@ Webserver.post(
                 await tx.user.update({
                     select: { id: true },
                     where: { ["id"]: token.uid },
-                    data: { ["uploadCount"]: { decrement: 1 } }
+                    data: { ["uploadCount"]: { increment: 1 } }
                 })
 
                 // [6C] Create new Clip in Database
