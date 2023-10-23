@@ -11,31 +11,27 @@ import Safe from "../../../../../shared/util/Safe";
 // - Valid ID => 200 OK (true)
 // - Valid ID Again => 200 OK (false)
 // - Bogus ID => 404 Not Found
-
 Webserver.put(
     "/api/clips/:clipid/views",
     Validate.routeParams("clipid"),
     Validate.userToken,
     async function (req: ERequest, res: EResponse) {
-        const { locals } = res
+        const { ip, token, clipid } = res.locals
 
         // [1] Check for Debounce via Fingerprint
         // - Respond with true to prevent abuse
-        // - Hash fingerprint for user privacy when looking at keys at a glance
-        const databaseKey = "view:debounce:" + Unique.generateHash(
-            `${locals.ip}${locals.token.uid}${locals.clipid}`
-        )
-        const [keyExists, existsError] = await Safe.call(Cache.exists(databaseKey))
+        const databaseKey = `view:debounce:${Unique.hash(`${ip}${token.uid}${clipid}`)}`
+        const [keyCount, existsError] = await Safe.call(Cache.exists(databaseKey))
         if (existsError)
             return Reply.withServerError(res, existsError)
-        if (keyExists === 1)
+        if (keyCount === 1)
             return Reply.withJSON(res, false)
 
         // [2] Increment View Counter
         const [someVideo, updateVideoError] = await Safe.call(
             Database.clip.update({
                 where: {
-                    ["id"]: locals.clipid,
+                    ["id"]: clipid,
                     ["deleted"]: false,
                     ["availability"]: "READY"
                 },
@@ -50,14 +46,14 @@ Webserver.put(
 
 
         // [3] Setup Debounce
-        // - Limited to 30 seconds or 80% of video duration if shorter
-        // - Fire-and-Forget Cache.exists() should catch database errors
+        // - Minimum of 15 seconds and maximum of 75% of the video duration
+        // - Fire-and-Forget, key might also be removed early if running low on memory
         await Promise.allSettled([
-            Cache.set(databaseKey, "X", { EX: (someVideo.duration) > 40 ? 40 : Math.floor(someVideo.duration * 0.75) }),
+            Cache.set(databaseKey, "X", { EX: (someVideo.duration < 15) ? 15 : Math.floor(someVideo.duration * 0.75) }),
             Cache.xAdd("views:tracker", "*", {
-                ["ipAddress"]: locals.ip,
-                ["userID"]: locals.token.uid.toString(),
-                ["clipID"]: locals.clipid.toString(),
+                ["ipAddress"]: ip,
+                ["userID"]: token.uid.toString(),
+                ["clipID"]: clipid.toString(),
             })
         ])
 
