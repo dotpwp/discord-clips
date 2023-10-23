@@ -207,8 +207,8 @@ export default class Worker {
                     ["id"]: true,
                     ["encoderOptions"]: true,
                     ["thumbnail"]: true,
-                    ["duration"]: true,
                     ["preview"]: true,
+                    ["duration"]: true,
                     ["deleted"]: true,
                     ["categoryId"]: true,
                     ["user"]: {

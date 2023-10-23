@@ -28,6 +28,7 @@ Webserver.get(
                     ["title"]: true,
                     ["description"]: true,
                     ["thumbnail"]: true,
+                    ["preview"]: true,
                     ["duration"]: true,
                     ["availability"]: true,
                     ["approximateCommentCount"]: true,

@@ -84,6 +84,7 @@ Webserver.get(
                                 ["created"]: true,
                                 ["title"]: true,
                                 ["thumbnail"]: true,
+                                ["preview"]: true,
                                 ["duration"]: true,
                                 ["approximateCommentCount"]: true,
                                 ["approximateHeartCount"]: true,
